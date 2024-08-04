@@ -5,7 +5,8 @@ import {
       changeCurrentPassword,
       updateAccountDetails,
       logoutUser,
-      deleteAdmin
+      deleteAdmin,
+      downloadExcelRecord
 } from "../controllers/admin.controllers.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -22,6 +23,8 @@ router.route("/:adminId").delete(verifyJWT, deleteAdmin)
 router.route("/change-password").post(verifyJWT, changeCurrentPassword)
 
 router.route("/update-account").patch(verifyJWT, updateAccountDetails)
+
+router.route("/excel-download").get(verifyJWT,downloadExcelRecord)
 
 
 export default router

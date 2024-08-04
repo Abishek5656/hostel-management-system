@@ -2,8 +2,10 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Admin } from "../models/admin.model.js";
+import ExcelJS from 'exceljs';
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import axios from 'axios';
 
 const generateAccessAndRefereshTokens = async (userId) => {
       try {
@@ -151,6 +153,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 })
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
+ 
       const { fullName, email } = req.body
 
       if (!fullName || !email) {
@@ -168,14 +171,46 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
             { new: true }
 
       ).select("-password")
-
-      console.log("user");
-      console.log(user)
-
+      
       return res
             .status(200)
             .json(new ApiResponse(200, user, "Account details updated successfully"))
 
+})
+
+const downloadExcelRecord = asyncHandler(async (req, res) => {
+
+      let allHostelersDetailsUrl = "http://localhost:8000/api/v1/hosteler/all";
+
+      let token = `Bearer ${process.env.TOKEN}`;
+      
+      const listOfHostelersDetails = await axios.get(allHostelersDetailsUrl, {
+          headers: {
+              Authorization: token
+          }
+      });
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Hostelers Records Excel');
+
+      const desiredHeaders = ['hostelerId', 'phoneNumber', 'name', "isPaid", "room", "price"];
+
+      const headers = Object.keys(listOfHostelersDetails?.data?.data[0]);
+
+      worksheet.addRow(headers);
+
+      listOfHostelersDetails?.data?.data.forEach(row => {
+            const values = headers.map(header => row[header]);
+            worksheet.addRow(values);
+        });
+      await workbook.xlsx.writeFile('Hostelersexcel.xlsx');
+      const buffer = await workbook.xlsx.writeBuffer();
+
+      res.setHeader('Content-Disposition', 'attachment; filename=hostelers.xlsx');
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.send(buffer);
+      
+    
 })
 
 
@@ -185,5 +220,6 @@ export {
       changeCurrentPassword,
       updateAccountDetails,
       logoutUser,
-      deleteAdmin
+      deleteAdmin,
+      downloadExcelRecord
 };
